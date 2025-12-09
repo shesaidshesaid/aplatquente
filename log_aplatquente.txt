@@ -1,0 +1,373 @@
+[INFO] Log TXT ativado. Arquivo: log_aplatquente.txt
+[INFO] Iniciando aplatquente.py (plano + preenchimento QPT / EPI adicional / AA / APN-1 / EPI).
+[INFO] DEBUG_LOCATORS ativado: serão registrados detalhes de XPaths / localizadores.
+[INFO] Usando msedgedriver local: .venv/msedgedriver.exe
+[INFO] Acessando APLAT: https://aplat.petrobras.com.br/#/permissaotrabalho/P-18/planejamento/programacaodiaria
+[TIMER] Document ready: 0.007s
+[LOGIN] Tentando login automático para usuário: d9j8
+[LOGIN] Submit via botão: //button[contains(.,'Sign in') or contains(.,'Login')]
+[INFO] Login realizado com sucesso (keyring).
+[TIMER] attempt_auto_login: 4.751s
+[TIMER] Document ready: 0.007s
+
+======================================================================
+[INFO] Iniciando análise da etapa 1/1: 2/86/2023 (data 11/12/2025)
+======================================================================
+[INFO] Iniciando pesquisa para etapa: 2/86/2023
+[CLICK] //button[normalize-space()='Exibir opções']
+[INFO] Campo data preenchido: 11/12/2025
+[INFO] Campo número etapa preenchido: 2/86/2023
+[CLICK] //button[normalize-space()='Pesquisar']
+[INFO] Aguardando resultados da pesquisa (até 30s)...
+[INFO] Resultado aberto (XPath: (//ul[contains(@class,'list-group')]//li[contains(@class,'listagem')])[1])
+[TIMER] perform_search: 17.391s
+[TIMER] perform_search: 18.548s
+[CLICK] Navegado para aba: Dados da Etapa
+[TIMER] goto_tab: 0.737s
+[INFO] Tipo Trabalho selecionado: value='2', texto='Trabalho a Quente'
+[WARN] Não foi possível ler 'Tipo de Etapa': Message: no such element: Unable to locate element: {"method":"xpath","selector":".//input[@type='radio' and @checked]"}
+  (Session info: MicrosoftEdge=143.0.3650.66); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff776979435
+	0x7ff7768e9aa4
+	0x7ff776cd2d12
+	0x7ff776742d9e
+	0x7ff776742ffb
+	0x7ff77673a33c
+	0x7ff77673a2e5
+	0x7ff77673a1fd
+	0x7ff77673a2e5
+	0x7ff77677c8de
+	0x7ff77673982a
+	0x7ff776738b33
+	0x7ff776739653
+	0x7ff776821d64
+	0x7ff776830b1c
+	0x7ff77682a6ff
+	0x7ff776a0a7f7
+	0x7ff7768f5306
+	0x7ff7768ef714
+	0x7ff7768ef859
+	0x7ff7768e391d
+	0x7ffd85a4e8d7
+	0x7ffd864cc53c
+
+[DEBUG] Descrição obtida usando XPath: //app-dados-da-etapa//textarea[contains(@formcontrolname,'descricao')]
+[TIMER] coletar_descricao: 0.017s
+[DEBUG] Características encontradas (Método 1): Delineamento, Tratamento Mecânico e Pintura, Utilização de Olhal, Utilização de PAE e PTA
+[TIMER] coletar_caracteristicas_trabalho: 0.042s
+[INFO] Tipo Trabalho selecionado: value='2', texto='Trabalho a Quente'
+
+--------------------------------------------------------------------------------
+[PLANO] Etapa 2/86/2023 | Data: 11/12/2025 | Tipo de Trabalho: Trabalho a Quente
+--------------------------------------------------------------------------------
+[INFO] Descrição (len=148):
+       ESTRUTURAL  - TRATAMENTO MECÂNICO E PINTURA NA CABINE DO GUINCHO DE ANCORAGEM "B", COM USO DE AGULHEIRO, LIXADEIRA PNEUMÁTICA E FERRAMENTAS MANUAIS.
+[INFO] Características do trabalho / Observações:
+       Delineamento, Tratamento Mecânico e Pintura, Utilização de Olhal, Utilização de PAE e PTA
+
+[CONTEXTOS DETECTADOS]
+  - tem_agulheiro = True
+  - tem_lix_pneum = True
+  - tem_lixadeira = True
+  - tem_pneumatico = True
+  - tem_trat_mec = True
+
+[EPI (RÁDIOS PRINCIPAIS) – PLANO ESPERADO]
+  Q001: resp='Não' | Cinto de Segurança
+  Q002: resp='Não' | Ventilação Forçada
+  Q003: resp='Não' | Colete Salva-vidas
+  Q004: resp='Não' | Iluminação p/ uso em área classificada (tipo Ex)
+  Q005: resp='Sim' | Dupla Proteção Auricular
+  Q006: resp='Sim' | Protetor Facial
+
+[EPIs VINCULADOS POR CATEGORIA – PLANO ESPERADO]
+  Categoria: Luvas
+    - LUVA ANTI-VIBRAÇÃO
+    - LUVA DE PROTEÇÃO CONTRA IMPACTOS MODELO II (3, 4, 3, 3, 'C', 'P')
+  Categoria: Proteção Respiratória
+    - PEÇA SEMI-FACIAL FILTRANTE 2
+  Categoria: Vestimentas
+    - DUPLA PROTEÇÃO AUDITIVA
+    - EPI´s OBRIGATÓRIOS (CAPACETE, BOTA, PROT. AURIC. E UNIFORME)
+  Categoria: Óculos
+    - PROTETOR FACIAL
+    - ÓCULOS AMPLA VISÃO
+
+[QUESTIONÁRIO PT – PLANO ESPERADO]
+  Q001: resp='Não' | O trabalho a ser realizado é caracterizado como uma mudança?
+  Q001: resp='Não' | Permanência do Operador no Local de Trabalho?
+  Q002: resp='Sim' | Acompanhamento Periódico? (Em caso de Acompanhamento Periódico, efetuar verificações de ____em___horas)
+  Q002: resp='NA' | As manobras, bloqueios e isolamentos foram executados conforme o plano de isolamento?
+  Q003: resp='NA' | O equipamento foi drenado e/ou lavado e/ou limpo e/ou ventilado ?
+  Q004: resp='NA' | O equipamento está corretamente sinalizado com etiquetas de advertência ?
+  Q005: resp='NA' | Foram realizadas inspeções prévias nos equipamentos elétricos (luminárias, quadros, painéis, conexões, cabos, etc) e os cabos elétricos estão supensos?
+  Q006: resp='NA' | Caso os sistemas e equipamentos de combate a incêndio do local onde será executado o trabalho não estejam em condições normais de operação, foram definidas salvaguardas?
+  Q007: resp='Sim' | As mangueiras de ar comprimido possuem engates rápidos compatíveis e os mesmos estão travados
+  Q008: resp='Sim' | O local foi isolado, sinalizado e o pessoal desnecessário  afastado ?
+  Q009: resp='NA' | Foi providenciada a contenção de fagulhas com mantas e materiais adequados?
+  Q010: resp='NA' | Caso o equipamento esteja acoplado a equipamento elétrico (ex: motor elétrico),  foram tomadas precauções quanto à energização acidental do equipamento ?
+  Q011: resp='NA' | Foi providenciado Tamponamentos de drenos, ralos, vents e outras aberturas próximas ao local do trabalho?
+  Q012: resp='Não' | A execução deste trabalho pode causar Risco de Perda de Produção?
+  Q013: resp='NA' | Caso necessário inibir sensores do sistema de detecção de fogo e gás, foram definidas salvaguardas para suprir a inibição?
+  Q014: resp='NA' | O observador foi instruído quanto a utilização dos equipamentos de combate a incêndio?
+
+[APN-1 – PLANO ESPERADO]
+  (nenhuma questão com 'Sim'; todas permanecem 'Não')
+  Questões com resposta 'Não':
+    Q001: 'Não'
+    Q002: 'Não'
+    Q003: 'Não'
+    Q004: 'Não'
+    Q005: 'Não'
+    Q006: 'Não'
+    Q007: 'Não'
+    Q008: 'Não'
+    Q009: 'Não'
+    Q010: 'Não'
+    Q011: 'Não'
+    Q012: 'Não'
+    Q013: 'Não'
+    Q014: 'Não'
+    Q015: 'Não'
+    Q016: 'Não'
+    Q017: 'Não'
+    Q018: 'Não'
+    Q019: 'Não'
+    Q020: 'Não'
+
+[ANÁLISE AMBIENTAL – PLANO ESPERADO]
+  Todas as questões devem ser respondidas com 'Não' (regra fixa para Trabalho a Quente).
+--------------------------------------------------------------------------------
+
+[STEP] Preenchendo aba 'Questionário PT'...
+[CLICK] Navegado para aba: Questionário PT
+[TIMER] goto_tab: 0.208s
+[INFO] Respondendo Q001: 'O trabalho a ser realizado é caracterizado como uma mudança?...' com 'Não'
+[DEBUG] Marcando resposta: 'Não' -> normalizada: 'NAO' -> alvo: 'Não'
+[DEBUG] Encontrados 2 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_1_211_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q001: 'Permanência do Operador no Local de Trabalho?...' com 'Não'
+[DEBUG] Marcando resposta: 'Não' -> normalizada: 'NAO' -> alvo: 'Não'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: ADC_2199_34_107_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q002: 'Acompanhamento Periódico? (Em caso de Acompanhamento Periódico, efetua...' com 'Sim'
+[DEBUG] Marcando resposta: 'Sim' -> normalizada: 'SIM' -> alvo: 'Sim'
+[DEBUG] Encontrados 2 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Clicando no input para: 'Sim' (ID: ADC_2199_113_300_0)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Sim' marcada com sucesso
+[INFO] Respondendo Q002: 'As manobras, bloqueios e isolamentos foram executados conforme o plano...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_110_319_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q003: 'O equipamento foi drenado e/ou lavado e/ou limpo e/ou ventilado ?...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_4_85_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q004: 'O equipamento está corretamente sinalizado com etiquetas de advertênci...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_5_83_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q005: 'Foram realizadas inspeções prévias nos equipamentos elétricos (luminár...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_111_320_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q006: 'Caso os sistemas e equipamentos de combate a incêndio do local onde se...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_109_318_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q007: 'As mangueiras de ar comprimido possuem engates rápidos compatíveis e o...' com 'Sim'
+[DEBUG] Marcando resposta: 'Sim' -> normalizada: 'SIM' -> alvo: 'Sim'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Clicando no input para: 'Sim' (ID: GER_2199_9_60_0)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Sim' marcada com sucesso
+[INFO] Respondendo Q008: 'O local foi isolado, sinalizado e o pessoal desnecessário afastado ?...' com 'Sim'
+[DEBUG] Marcando resposta: 'Sim' -> normalizada: 'SIM' -> alvo: 'Sim'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Clicando no input para: 'Sim' (ID: GER_2199_11_88_0)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Sim' marcada com sucesso
+[INFO] Respondendo Q009: 'Foi providenciada a contenção de fagulhas com mantas e materiais adequ...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_107_316_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q010: 'Caso o equipamento esteja acoplado a equipamento elétrico (ex: motor e...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_16_61_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q011: 'Foi providenciado Tamponamentos de drenos, ralos, vents e outras abert...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_86_290_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q012: 'A execução deste trabalho pode causar Risco de Perda de Produção?...' com 'Não'
+[DEBUG] Marcando resposta: 'Não' -> normalizada: 'NAO' -> alvo: 'Não'
+[DEBUG] Encontrados 2 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_87_291_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q013: 'Caso necessário inibir sensores do sistema de detecção de fogo e gás, ...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_108_317_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+[INFO] Respondendo Q014: 'O observador foi instruído quanto a utilização dos equipamentos de com...' com 'NA'
+[DEBUG] Marcando resposta: 'NA' -> normalizada: 'NA' -> alvo: 'NA'
+[DEBUG] Encontrados 3 spans de opções
+[DEBUG] Opção encontrada: 'Sim'
+[DEBUG] Opção encontrada: 'Não'
+[DEBUG] Clicando no input para: 'Não' (ID: GER_2199_112_321_1)
+[DEBUG] Estratégia 1 funcionou
+[OK] Resposta 'Não' marcada com sucesso
+
+[RESUMO] Questionário PT:
+  • Total de questões: 16
+  • Marcadas com sucesso: 16
+  • Falhas: 0
+  • Taxa de sucesso: 100.0%
+[TIMER] preencher: 8.392s
+[TIMER] preencher_questionario_pt: 8.392s
+[STEP] Preenchendo EPI adicional...
+[CLICK] Navegado para aba: EPI
+[TIMER] goto_tab: 0.199s
+[INFO] EPI adicional: 6 questões encontradas
+[INFO] EPI adicional concluído
+[TIMER] preencher: 0.791s
+[TIMER] preencher_epi_adicional: 0.791s
+[STEP] Preenchendo Análise Ambiental...
+[CLICK] Navegado para aba: Análise Ambiental
+[TIMER] goto_tab: 0.201s
+[INFO] Análise Ambiental: 3 questões marcadas via JavaScript
+[TIMER] preencher: 0.231s
+[TIMER] preencher_analise_ambiental: 0.232s
+[STEP] Preenchendo APN-1 (análise dinâmica por texto)...
+[CLICK] Navegado para aba: APN-1
+[TIMER] goto_tab: 0.202s
+[INFO] APN-1: 17 perguntas coletadas
+[INFO] P01 → Não | 'A execução deste trabalho implica em alteração nas...'
+[INFO] P02 → Não | 'Durante a execução deste trabalho pode haver conta...'
+[INFO] P03 → Não | 'Durante a execução deste trabalho haverá intervenç...'
+[INFO] P04 → Não | 'Durante a execução deste trabalho haverá intervenç...'
+[INFO] P05 → Não | 'A execução deste trabalho pode interferir na segur...'
+[INFO] P06 → Não | 'Este trabalho será executado no interior de espaço...'
+[INFO] P07 → Não | 'Este trabalho será executado em altura acima de 2m...'
+[INFO] P08 → Não | 'Este trabalho será executado sobre o mar?...'
+[INFO] P09 → Não | 'Este trabalho será executado em local com risco de...'
+[INFO] P10 → Não | 'O trabalho envolverá chama aberta (solda, corte, e...'
+[INFO] P11 → Não | 'Os equipamentos/ferramentas utilizados na execução...'
+[INFO] P12 → Não | 'Este trabalho envolve o uso de fonte de radiação i...'
+[INFO] P13 → Não | 'O trabalho envolverá a abertura de equipamento ou ...'
+[INFO] P14 → Não | 'O trabalho será realizado em equipamento ou sistem...'
+[INFO] P15 → Não | 'O trabalho envolve operações de mergulho?...'
+[INFO] P16 → Não | 'O trabalho é de hidrojateamento?...'
+[INFO] P17 → Não | 'Durante a execução do trabalho pode haver aproxima...'
+[DONE] APN-1 finalizado: 17 sucessos, 0 falhas
+[TIMER] preencher: 1.771s
+[TIMER] preencher_apn1: 1.771s
+[STEP] Processando aba 'EPI'...
+[CLICK] Navegado para aba: EPI
+[TIMER] goto_tab: 0.187s
+
+[EPI] Processando categoria: Vestimentas
+[INFO] Categoria - 18 item(s) encontrado(s)
+[EPI] Vestimentas - Comparação:
+  Esperados (2): ['DUPLA PROTEÇÃO AUDITIVA', 'EPI´s OBRIGATÓRIOS (CAPACETE, BOTA, PROT. AURIC. E UNIFORME)']
+  Atuais    (18): ['ABAFADOR', 'AVENTAL', 'AVENTAL DE RASPA', 'BALACLAVA', 'BALACLAVA  AE-2', 'BLUSÃO DE RASPA', 'BOTA CANO ALTO', 'BOTA DE COURO COM BIQUEIRA COMPOSITE', 'BOTA DE COURO COM BIQUEIRA DE AÇO', 'BOTA DE COURO COM BIQUEIRA PLÁSTICA', 'BOTA DE COURO SEM BIQUEIRA', 'CAPACETE S/ABAS C/ CARNEIRA E PRESILHA DE QUEIXO EM Y', 'CINTO DE SEG. TP PARA-QUEDISTA', 'CINTO DE SEGURANÇA PARA RESGATE', 'DUPLA PROTEÇÃO AUDITIVA', 'DUPLO TALABARTE EM Y OU LINHA DE VIDA CONJUGADA TRAVA QUEDA', 'EPI´s OBRIGATÓRIOS (CAPACETE, BOTA, PROT. AURIC. E UNIFORME)', 'MACACÃO COM GOLA TIPO PADRE E BOLSOS FECHADOS']
+  Excedentes (16):
+    • ABAFADOR
+    • AVENTAL
+    • AVENTAL DE RASPA
+    • BALACLAVA
+    • BALACLAVA  AE-2
+    • BLUSÃO DE RASPA
+    • BOTA CANO ALTO
+    • BOTA DE COURO COM BIQUEIRA COMPOSITE
+    • BOTA DE COURO COM BIQUEIRA DE AÇO
+    • BOTA DE COURO COM BIQUEIRA PLÁSTICA
+    • BOTA DE COURO SEM BIQUEIRA
+    • CAPACETE S/ABAS C/ CARNEIRA E PRESILHA DE QUEIXO EM Y
+    • CINTO DE SEG. TP PARA-QUEDISTA
+    • CINTO DE SEGURANÇA PARA RESGATE
+    • DUPLO TALABARTE EM Y OU LINHA DE VIDA CONJUGADA TRAVA QUEDA
+    • MACACÃO COM GOLA TIPO PADRE E BOLSOS FECHADOS
+
+[EPI] Processando categoria: Óculos
+[INFO] Categoria - 2 item(s) encontrado(s)
+[EPI] Óculos - Comparação:
+  Esperados (2): ['PROTETOR FACIAL', 'ÓCULOS AMPLA VISÃO']
+  Atuais    (2): ['PROTETOR FACIAL', 'ÓCULOS AMPLA VISÃO']
+
+[EPI] Processando categoria: Luvas
+[INFO] Categoria - 6 item(s) encontrado(s)
+[EPI] Luvas - Comparação:
+  Esperados (2): ['LUVA ANTI-VIBRAÇÃO', "LUVA DE PROTEÇÃO CONTRA IMPACTOS MODELO II (3, 4, 3, 3, 'C', 'P')"]
+  Atuais    (6): ['LUVA ANTI-VIBRAÇÃO', "LUVA DE PROTEÇÃO CONTRA IMPACTOS MODELO II (3, 4, 3, 3, 'C', 'P')", 'LUVA DE SUEDINE', 'LUVA ELETRICISTA', 'LUVA ISOLANTE', 'LUVA ISOLANTE CLASSE 0']
+  Excedentes (4):
+    • LUVA DE SUEDINE
+    • LUVA ELETRICISTA
+    • LUVA ISOLANTE
+    • LUVA ISOLANTE CLASSE 0
+
+[EPI] Processando categoria: Proteção Respiratória
+[INFO] Categoria - 1 item(s) encontrado(s)
+[EPI] Proteção Respiratória - Comparação:
+  Esperados (1): ['PEÇA SEMI-FACIAL FILTRANTE 2']
+  Atuais    (1): ['PEÇA SEMI-FACIAL FILTRANTE 2']
+[INFO] Aba EPI processada
+[TIMER] processar: 0.780s
+[TIMER] processar_aba_epi: 0.780s
+[INFO] Efetuando confirmação geral da etapa no rodapé...
+[CLICK] Botão Confirmar acionado
+[TIMER] processar_etapa: 35.504s
+[INFO] Processo concluído (plano + preenchimento QPT / EPI adicional / AA / APN-1 / EPI).
+Pressione ENTER para encerrar e fechar o navegador...
