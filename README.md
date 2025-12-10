@@ -206,614 +206,629 @@ Principais arquivos/módulos:
 
    Lógica esperadada:
 
-   1. Escopo geral
 
-Fonte: log_aplat_unificado.txt (mesmo formato do htmlaplat.py).
 
-Os scripts filtram apenas etapas com:
 
-Tipo de Trabalho: Trabalho a Quente.
+   
 
-Textos usados para regras de contexto:
+## 1. Visão geral do fluxo
 
-Descrição
+**Objetivo:** Automatizar, para etapas de **Trabalho a Quente** na P-18, o preenchimento de:
 
-Características do trabalho / Observações
+* Questionário PT
+* EPI adicional necessário e proteções (bloco de rádios na aba EPI)
+* Análise Ambiental
+* APN-1
+* Aba de EPIs vinculados (Vestimentas, Óculos, Luvas, Proteção Respiratória)
 
-Antes de procurar palavras-chave:
+**Fluxo alto nível, por etapa (`valor`) e data (`data`):**
 
-Remove acentos, cedilha, til etc.
+1. Login no APLAT (via SSO + keyring, se configurado).
+2. Pesquisa da etapa pela combinação:
 
-Converte para MAIÚSCULO.
+   * Data da etapa
+   * Número da etapa (ex.: `18/164/2024`)
+3. Abre o primeiro resultado da lista.
+4. Vai para aba **Dados da Etapa**.
+5. Lê:
 
-Usa o texto normalizado de descrição + características.
+   * **Tipo Trabalho** (combo `Trabalho a Quente`, `Trabalho a Frio`, etc.)
+   * **Tipo de Etapa** (PT Diária / PT Extra / etc.)
+   * **Descrição da Etapa**
+   * **Características do trabalho / Observações** (texto maior com palavras-chave).
+6. Se o Tipo Trabalho **não é** “Trabalho a Quente”:
 
-Busca sempre a expressão inteira na ordem correta, ex.: "ACESSO POR CORDAS" tem que aparecer assim, não apenas “acesso” e “cordas” separados.
+   * Loga que a etapa foi ignorada.
+   * Não preenche nada e segue para próxima etapa.
+7. Se é “Trabalho a Quente”:
 
-2. Base e regras – EPI (rádios principais)
-2.1. Base global (sem contexto)
-Código	Pergunta	Base (sem contexto)
-Q001	Cinto de Segurança	Não
-Q002	Ventilação Forçada	Não
-Q003	Colete Salva-vidas	Não
-Q004	Iluminação p/ uso em área classificada (Ex)	Não
-Q005	Dupla Proteção Auricular	Sim
-Q006	Protetor Facial	Sim (ajustado por contexto)
-2.2. Regras de contexto para EPI rádios
+   * Normaliza os textos (caixa alta/baixa, acentos, espaços).
+   * Detecta **contextos** (flags booleanas) a partir de palavras-chave.
+   * Com base nesses contextos, gera um **plano de preenchimento**:
 
-Tudo é decidido em cima de ctx, montado a partir de Descrição+Características normalizadas.
+     * Questionário PT (mapa pergunta → resposta).
+     * EPI adicional – rádios.
+     * Regras para Análise Ambiental.
+     * APN-1 (quais questões serão “Sim”/“Não”).
+     * EPIs por categoria (Vestimentas, Óculos, Luvas, Proteção Respiratória).
+   * Imprime um relatório de plano (para auditoria).
+8. Aplica o plano na interface:
 
-2.2.1. “Acesso por Cordas” / “Sobre o mar”
+   * Aba **Questionário PT**
+   * Aba **EPI** (bloco EPI adicional)
+   * Aba **Análise Ambiental**
+   * Aba **APN-1**
+   * Aba **EPI** (grid de EPIs vinculados)
+9. Dá um único **Confirmar** no rodapé da etapa (grava tudo de uma vez).
+10. Passa para a próxima etapa, se existir.
 
-Se ACESSO POR CORDAS no texto:
+---
 
-Q001 – Cinto de Segurança → Sim
+## 2. Módulo de coleta de dados da etapa
 
-Se SOBRE O MAR no texto:
+### 2.1. Leitura de Tipo Trabalho
 
-Q001 – Cinto de Segurança → Sim
+* Localiza o combo “Tipo Trabalho” na aba Dados da Etapa usando o label.
+* Lê:
 
-Q003 – Colete Salva-vidas → Sim
+  * `value` (código interno, ex.: `"2"`)
+  * texto visível (ex.: `"Trabalho a Quente"`).
+* Loga o valor e o texto selecionados.
 
-2.2.2. Risco para olhos (hazard_olhos)
+**Regra principal:**
 
-Consideramos hazard_olhos = True se existir pelo menos um de:
+* Se o texto não corresponde a “Trabalho a Quente” (após normalização), a etapa é **descartada** pela automação (somente log, sem preenchimentos).
 
-“CHAMA ABERTA”
+---
 
-“ESMERILHADEIRA”
+### 2.2. Leitura de Tipo de Etapa
 
-“OXICORTE”
+* Localiza o fieldset “Tipo de Etapa”.
+* Lê qual radio está marcado e seu texto (PT Diária, PT Extra, etc.).
+* Serve para log / auditoria, mas **não altera** as decisões de preenchimento no momento (a lógica de riscos é guiada por “Trabalho a Quente”, não pelo subtipo de etapa).
 
-“SOLDA”
+---
 
-“TRATAMENTO MECÂNICO”
+### 2.3. Descrição da Etapa
 
-“AGULHEIRO”
+* Procura um `textarea` de Descrição dentro de “Dados da Etapa”.
+* Extrai valor/texto, remove espaços em branco excedentes.
+* Se não encontrar, loga aviso e considera descrição vazia.
 
-“LIXADEIRA PNEUMATIC…” (qualquer variação ex.: PNEUMÁTICA)
+---
 
-“LIXADEIRA” (genérico)
+### 2.4. Características do trabalho / Observações
 
-“CORTE” (palavra inteira, não vale “OXICORTE”)
+* Tenta localizar um bloco identificado próximo a “Características do trabalho” (label).
+* Se não encontrar esse grupo específico:
 
-“SERRA SABRE”
+  * Usa todo o texto da área “app-dados-da-etapa” como fallback.
+* Isso gera um **texto grande** com:
 
-Regra para Q006 – Protetor Facial:
+  * Campos de formulário (rótulos, listas, etc.).
+  * Itens de categoria (ANDAIME, CALDEIRARIA, ESCALADA INDUSTRIAL, etc.).
+  * Observações como “Sobre o Mar”, “Acesso por Cordas”, etc.
 
-Se hazard_olhos = True → Q006 esperado = 'Sim'
+Esse texto é a base para as **palavras-chave** de contexto.
 
-Se hazard_olhos = False → Q006 esperado = 'Não'
+---
 
-3. Base e regras – EPIs vinculados por categoria
-3.1. Base global (sem contexto)
+## 3. Engine de contexto (palavras-chave → flags)
 
-Luvas
+### 3.1. Normalização
 
-LUVA DE PROTEÇÃO CONTRA IMPACTOS MODELO II (3, 4, 3, 3, 'C', 'P')
+Antes de procurar palavras-chave, o sistema aplica normalização:
 
-Proteção Respiratória
+* Converte para minúsculas.
+* Remove acentos e caracteres especiais básicos.
+* “Compacta” espaços múltiplos em espaço simples.
+* Em algumas partes da lógica (especialmente EPIs) também:
 
-Base neutra:
+  * Normaliza espaços e quebras de linha em uma única sequência de espaços.
 
-"NÃO APLICÁVEL"
-(em contextos de risco, substituído por EPIs específicos)
+---
 
-Vestimentas
+### 3.2. Flags de contexto (o que já vemos claramente em log)
 
-DUPLA PROTEÇÃO AUDITIVA
+Para cada etapa, o plano gera flags booleanas como:
 
-EPI´s OBRIGATÓRIOS (CAPACETE, BOTA, PROT. AURIC. E UNIFORME)
+* `tem_acesso_cordas`
+* `tem_agulheiro`
+* `tem_altura`
+* `tem_eletrico`
+* `tem_pneumatico`
+* `tem_sobre_o_mar`
 
-OBS: BALACLAVA saiu da base global. Hoje só entra por contexto de chama aberta / esmerilhadeira / oxicorte / solda.
+Cada flag é ligada a um ou mais padrões de texto, por exemplo:
 
-Óculos
+| Flag                | Exemplos de palavras/expressões gatilho                              |
+| ------------------- | -------------------------------------------------------------------- |
+| `tem_acesso_cordas` | “acesso por cordas”, “escala industrial”, “escalada industrial”      |
+| `tem_altura`        | “altura”, “acima de 2m”, referência de trabalho em altura / NR-35    |
+| `tem_sobre_o_mar`   | “sobre o mar”, “acima do mar”, “trabalho sobre o mar”                |
+| `tem_agulheiro`     | “agulheiro pneumático”, “agulheiro”, “agulha vibratória”             |
+| `tem_pneumatico`    | “pneumático”, “pneumatica”, uso explícito de ferramentas pneumáticas |
+| `tem_eletrico`      | “painel elétrico”, “equipamento elétrico”, “trabalho elétrico”, etc. |
 
-Base “de risco”:
+Na prática, o código varre a **descrição** + **características** e, ao encontrar qualquer gatilho correspondente, marca a flag como `True`.
 
-ÓCULOS AMPLA VISÃO
+---
 
-PROTETOR FACIAL
+### 3.3. Como as flags são usadas
 
-3.2. Regra “sem risco para olhos”
+As flags alimentam a construção de um objeto de **plano de preenchimento**, que tem subestruturas:
 
-Se não houver nenhum dos termos de risco (hazard_olhos = False):
+* `plano["qpt"]` → Questionário PT (por pergunta)
+* `plano["epi_radios"]` → rádios de EPI adicional
+* `plano["apn1"]` → respostas por questão APN-1
+* `plano["epis_cat"]` → EPIs desejados por categoria (Vestimentas, Óculos, Luvas, Proteção Respiratória)
+* Regras de Análise Ambiental (fixo em Trabalho a Quente)
 
-Categoria Óculos passa a ter como base apenas:
+Exemplo real de flags detectadas na etapa `18/164/2024`:
 
-ÓCULOS SEGURANÇA CONTRA IMPACTO
+* tem_acesso_cordas = True
+* tem_agulheiro = True
+* tem_altura = True
+* tem_eletrico = True
+* tem_pneumatico = True
+* tem_sobre_o_mar = True
 
-Em paralelo, como já visto:
+Isso explica porque o plano fica “pesado” em EPI de altura, salvamento e ruído.
 
-Q006 – Protetor Facial esperado = Não
+---
 
-3.3. Regras para “chama aberta / esmerilhadeira / oxicorte / solda”
+## 4. Lógica do plano – Questionário PT
 
-Se existir qualquer de:
+### 4.1. Conceito
 
-“CHAMA ABERTA”
+* O Questionário PT é representado no plano como um conjunto de **regras por questão**.
+* Cada pergunta na tela tem:
 
-“ESMERILHADEIRA”
+  * Uma **ordem** (001, 002, 003…).
+  * Um texto (“O trabalho a ser realizado é caracterizado como uma mudança?”, etc.).
+* A automação não depende apenas da numeração; ela usa o **texto da pergunta** para mapear a resposta correta, o que torna robusto a reordenações/variações de Q001/Q002.
 
-“OXICORTE”
+### 4.2. Padrão base (Trabalho a Quente “normal”)
 
-“SOLDA”
+Para o cenário observado (inspeção com agulheiro, altura, acesso por cordas, sobre o mar), o plano resultou em:
 
-então:
+* “Mudança?” → **Não**
+* “Permanência do Operador no Local de Trabalho?” → **Não**
+* “Acompanhamento Periódico?” → **Sim**
+* “As manobras, bloqueios e isolamentos foram executados conforme o plano de isolamento?” → **NA**
+* “O equipamento foi drenado/limpo/ventilado?” → **NA**
+* “Equipamento sinalizado com etiquetas de advertência?” → **NA**
+* “Inspeções prévias em equipamentos elétricos e cabos supensos?” → **Sim**
+* “Sistemas/equipamentos de combate a incêndio não normais – salvaguardas definidas?” → **NA**
+* “Mangueiras de ar comprimido com engates compatíveis e travados?” → **Sim**  (ligado a contexto pneumático)
+* “Local isolado, sinalizado e afastamento do pessoal desnecessário?” → **Sim**
+* “Contenção de fagulhas com mantas adequadas?” → **NA**
+* “Equipamento acoplado a equipamento elétrico – precauções quanto à energização acidental?” → **NA**
+* “Risco de perda de produção?” → **Não**
+* “Sensores de fogo e gás inibidos – salvaguardas definidas?” → **NA**
+* “Observador instruído quanto uso de combate a incêndio?” → **NA** (para este caso)
 
-Luvas – adicionais obrigatórios
+**Ideia geral da lógica:**
 
-LUVA ARAMIDA
+* Há um **perfil padrão de Trabalho a Quente** que parte de:
 
-LUVA DE RASPA
+  * “Mudança?” → Não (não caracteriza alteração de projeto/procedimento).
+  * “Acompanhamento Periódico?” → Sim (trabalho crítico, exige supervisão).
+  * Itens ligados a **procedimentos corporativos** (isolamento, drenagem, etiquetagem, etc.) são NA quando:
 
-Vestimentas – adicionais obrigatórios
+    * A etapa descrita não fala em abertura de equipamento, linha, tanque, etc.
+* Itens diretamente relacionados a contexto detectado:
 
-BALACLAVA
+  * Se há ferramentas pneumáticas → “Mangueiras de ar comprimido possuem engates rápidos compatíveis” = Sim.
+  * Se há trabalho em altura/sobre o mar → intensificação de EPI e salvaguardas (refletido mais em APN-1 e EPI do que em QPT, neste cenário).
 
-AVENTAL DE RASPA
+---
 
-CAPUZ
+## 5. Lógica do plano – EPI adicional (rádios na aba EPI)
 
-MANGA DE RASPA
+### 5.1. Conceito
 
-PERNEIRA DE RASPA
+Na aba **EPI**, há um bloco “EPI adicional necessário e proteções”, com perguntas do tipo:
 
-VESTIM. COMPLETA DE RASPA
+* “Cinto de Segurança” → Sim/Não
+* “Ventilação Forçada” → Sim/Não
+* “Colete Salva-vidas” → Sim/Não
+* “Iluminação p/ uso em área classificada (tipo Ex)” → Sim/Não
+* “Dupla Proteção Auricular” → Sim/Não
+* “Protetor Facial” → Sim/Não
 
-Proteção Respiratória
+O plano `epi_radios` define para cada uma dessas:
 
-Base deixa de ser "NÃO APLICÁVEL" e passa a ser:
+* `Sim` / `Não`.
 
-PEÇA SEMI-FACIAL FILTRANTE 2
+### 5.2. Regras vistas no cenário (cordas + altura + sobre o mar + pneumático)
 
-Óculos
+Resultado do plano:
 
-Mantém base de risco (ÓCULOS AMPLA VISÃO, PROTETOR FACIAL).
+* Cinto de Segurança → **Sim**
+* Ventilação Forçada → **Não**
+* Colete Salva-vidas → **Sim**
+* Iluminação Ex → **Não**
+* Dupla Proteção Auricular → **Sim**
+* Protetor Facial → **Sim**
 
-Adiciona sempre:
+Interpretação lógica:
 
-MÁSCARA SOLDADOR
+* **Altura/acesso por cordas**:
 
-Adiciona condicionalmente:
+  * `Cinto de Segurança` = Sim
+    (Trabalho em altura, NR-35 → obrigatório)
+* **Sobre o mar**:
 
-Se “SOLDa” ou “OXICORTE”:
+  * `Colete Salva-vidas` = Sim
+    (Trabalho com risco de queda no mar)
+* **Ferramentas pneumáticas / agulheiro**:
 
-LENTE DE ACORDO COM AMPERAGEM DA MÁQUINA
+  * `Dupla Proteção Auricular` = Sim (nível de ruído elevado)
+  * `Protetor Facial` = Sim (projeção de partículas)
+* **Sem indicação de espaço confinado / ventilação crítica**:
 
-Se “OXICORTE”:
+  * `Ventilação Forçada` = Não
+* **Sem menção explícita a área classificada sem EPI Ex específico nessa etapa**:
 
-ÓCULOS MAÇARIQUEIRO
+  * `Iluminação Ex` = Não (não é que não exista área classificada, mas não há indicação de exceção ao padrão)
 
-3.4. Regras para “TRATAMENTO MECÂNICO / AGULHEIRO / LIXADEIRA PNEUMÁTIC…”
+---
 
-Se existir qualquer de:
+## 6. Lógica do plano – Análise Ambiental
 
-“TRATAMENTO MECANICO”
+### 6.1. Regra simples de Trabalho a Quente
 
-“AGULHEIRO”
+Para o caso “Trabalho a Quente” no APLATQUENTE, a Análise Ambiental é tratada com uma **regra fixa**:
 
-“LIXADEIRA PNEUMATIC…” (qualquer variação)
+* Todas as questões (Líquidos inflamáveis, corrosivos, gás tóxico, sólidos combustíveis, etc.) → **“Não”**.
 
-então:
+O motivo:
 
-Proteção Respiratória
+* A etapa que está sendo automatizada não está assumindo a presença, na interface, de um plano de manuseio de produto químico específico – o risco de Trabalho a Quente é tratado em outro lugar (QPT, EPIs, APN-1).
+* O script ainda ignora linhas que não contêm uma pergunta (linhas meramente decorativas/agrupadoras).
 
-Base passa a ser:
+---
 
-PEÇA SEMI-FACIAL FILTRANTE 2
-(ou seja, deixa de ser "NÃO APLICÁVEL")
+## 7. Lógica do plano – APN-1
 
-Luvas
+### 7.1. Conceito
 
-Adicional obrigatório:
+APN-1 avalia se, dadas certas condições de risco ampliado, é necessário ou não acionar **APN-2** ou processos adicionais. Cada questão APN-1 é do tipo Sim/Não.
 
-LUVA ANTI-VIBRAÇÃO
+No cenário que analisamos, o plano retorna:
 
-3.5. Regras para “pneumático / pneumática”
+* Sim em:
 
-Se texto contiver algo com “PNEUMATIC…”
+  * Q007: Trabalho em altura acima de 2 m com risco de queda e não coberto por procedimento rotineiro.
+  * Q008: Trabalho será executado sobre o mar.
+* Não em todas as demais (Q001, Q002, ..., Q006, Q009, ..., Q020).
 
-(já coberto pelas regras acima para QPT e risco olhos)
+### 7.2. Regras inferidas por contexto
 
-Influencia:
+Base observado:
 
-Q007 do QPT (mangueiras de ar comprimido) → ver Seção 4.3.
+* `tem_altura` = True → Q007 = **Sim**
+* `tem_sobre_o_mar` = True → Q008 = **Sim**
+* Demais flags (elétrico, pneumático, etc.), no cenário observado, não ativaram outras APNs, possivelmente porque:
 
-hazard_olhos = True (por “LIXADEIRA PNEUMATIC…” ou outros).
+  * O trabalho em questão está dentro de uma matriz já tratada por PT/TRBR padrão para esses riscos.
+  * Não há indicação de choque elétrico fora do padrão (não é intervenção em painel crítico, por exemplo).
 
-3.6. “Acesso por Cordas”
+**Padrão de construção do plano APN-1:**
 
-Se contiver “ACESSO POR CORDAS”:
+1. Inicialmente, todas as questões APN-1 são definidas como **“Não”**.
+2. Para cada flag relevante:
 
-Vestimentas – adicionais obrigatórios
+   * `tem_altura` → Q007 = Sim.
+   * `tem_sobre_o_mar` → Q008 = Sim.
+   * (Outras flags, em versões futuras, podem ajustar Q009–Q020, mas no cenário observado a lógica ativa apenas estas.)
 
-BOTA CANO ALTO
+---
 
-CAPACETE S/ABAS C/ CARNEIRA E PRESILHA DE QUEIXO EM Y
+## 8. Lógica do plano – EPIs por categoria (aba EPI, grid de vinculação)
 
-CINTO DE SEG. TP PARA-QUEDISTA
+### 8.1. Conceito
 
-CINTO DE SEGURANÇA PARA RESGATE
+Além dos rádios “EPI adicional”, existe a **lista de EPIs vinculados** organizados por categoria:
 
-DUPLO TALABARTE EM Y OU LINHA DE VIDA CONJUGADA TRAVA QUEDA
+* Vestimentas
+* Óculos
+* Luvas
+* Proteção Respiratória
 
-MACACÃO COM GOLA TIPO PADRE E BOLSOS FECHADOS
+O plano define, para cada categoria, o conjunto de EPIs que **deveriam** estar vinculados.
 
-3.7. “Sobre o mar”
+Na execução, a lógica é:
 
-Se contiver “SOBRE O MAR”:
+1. Ler itens atuais da categoria (o que já está associado).
+2. Comparar com o conjunto **esperado** do plano.
+3. Calcular:
 
-Vestimentas – adicionais obrigatórios
+   * Itens faltantes = esperados – atuais.
+   * Itens excedentes = atuais – esperados.
+4. Incluir faltantes (via modal de associação).
+5. Remover excedentes (clicando linha + botão “-”).
 
-BOTA CANO ALTO
+### 8.2. Vestimentas (para o cenário observado)
 
-CAPACETE S/ABAS C/ CARNEIRA E PRESILHA DE QUEIXO EM Y
+Plano esperado (Trabalho a Quente, altura, cordas, sobre o mar):
 
-CINTO DE SEG. TP PARA-QUEDISTA
+* BOTA CANO ALTO
+* CAPACETE S/ABAS C/ CARNEIRA E PRESILHA DE QUEIXO EM Y
+* CINTO DE SEG. TP PARA-QUEDISTA
+* CINTO DE SEGURANÇA PARA RESGATE
+* COLETE SALVA VIDAS RF (apenas para trabalhos a quente)
+* COLETE SALVA-VIDAS
+* DUPLA PROTEÇÃO AUDITIVA
+* DUPLO TALABARTE EM Y OU LINHA DE VIDA CONJUGADA TRAVA QUEDA
+* EPI´s OBRIGATÓRIOS (CAPACETE, BOTA, PROT. AURIC. E UNIFORME)
+* MACACÃO COM GOLA TIPO PADRE E BOLSOS FECHADOS
 
-CINTO DE SEGURANÇA PARA RESGATE
+Efeito das flags:
 
-COLETE SALVA VIDAS RF (apenas para trabalhos a quente)
+* `tem_altura` / `tem_acesso_cordas`:
 
-COLETE SALVA-VIDAS
+  * GANHA: cinto para-quedista, cinto de resgate, duplo talabarte, bota cano alto, capacete adequado.
+* `tem_sobre_o_mar`:
 
-DUPLO TALABARTE EM Y OU LINHA DE VIDA CONJUGADA TRAVA QUEDA
+  * GANHA: colete salva-vidas + colete salva-vidas RF.
+* `tem_pneumatico` / `tem_agulheiro`:
 
-MACACÃO COM GOLA TIPO PADRE E BOLSOS FECHADOS
+  * GANHA ou reforça: dupla proteção auditiva.
+* “Trabalho a Quente”:
 
-3.8. Tratamento especial de “NÃO APLICÁVEL”
+  * GANHA: EPI´s obrigatórios gerais, macacão adequado.
 
-Base global de Proteção Respiratória sem risco = {"NÃO APLICÁVEL"}.
+Na situação que você rodou:
 
-Em qualquer contexto em que a base passe a ser, por exemplo,
-{"PEÇA SEMI-FACIAL FILTRANTE 2"}, o item "NÃO APLICÁVEL" não está mais na base.
+* O sistema:
 
-Se a etapa trouxer "NÃO APLICÁVEL" junto com EPIs respiratórios:
+  * adicionou o “EPI´s OBRIGATÓRIOS (CAPACETE, BOTA, PROT. AURIC. E UNIFORME)” que faltava.
+  * removeu itens excedentes:
 
-"NÃO APLICÁVEL" é marcado como Adicional (amarelo) no relatório.
+    * VESTIM. RF CLASSE 4
+    * VESTIM. TYVEC
+    * INTERV. REDE ELETRICA (...)
+    * BALACLAVA AE-2
 
-Na prática isso te mostra visualmente o erro: não faz sentido ter EPI + “não aplicável”.
+Ou seja, “limpou” tudo que não faz parte do conjunto alvo de Trabalho a Quente com cordas sobre o mar.
 
-4. Base e regras – Questionário PT (Trabalho a Quente)
-4.1. Base global (sem contexto)
+---
 
-Chave = (código, texto idêntico ao relatório). Simplificando:
+### 8.3. Óculos
 
-Q001 – O trabalho a ser realizado é caracterizado como uma mudança? → Não
+Plano esperado:
 
-Q001 – Permanência do Operador no Local de Trabalho? → Não
+* PROTETOR FACIAL
+* ÓCULOS AMPLA VISÃO
 
-Q002 – Acompanhamento Periódico? → Sim
+No cenário:
 
-Q002 – As manobras, bloqueios e isolamentos… → NA
+* Atuais iniciais:
 
-Q003 – O equipamento foi drenado… → NA
+  * PROTETOR FACIAL
+  * ÓCULOS AMPLA VISÃO
+  * ÓCULOS PROTETOR FACIAL
+  * ÓCULOS SEG. CONTRA POEIRA
+* Itens faltantes: nenhum.
+* Excedentes (para remoção):
 
-Q004 – O equipamento está corretamente sinalizado… → NA
+  * ÓCULOS PROTETOR FACIAL
+  * ÓCULOS SEG. CONTRA POEIRA
 
-Q005 – Inspeções prévias em equipamentos elétricos… → NA (ajustado por contexto)
+Depois da limpeza ficam apenas:
 
-Q006 – Sistemas de combate a incêndio não operacionais… → NA
+* PROTETOR FACIAL
+* ÓCULOS AMPLA VISÃO
 
-Q007 – Mangueiras de ar comprimido… → NA (ajustado por contexto)
+Ligação com flags:
 
-Q008 – Local isolado / sinalizado… → Sim
+* `tem_agulheiro` / `tem_pneumatico`:
 
-Q009 – Contenção de fagulhas com mantas… → NA (ajustado por contexto)
+  * justificam proteção reforçada para olhos/face → protetor facial + óculos de ampla visão.
 
-Q010 – Equipamento acoplado a motor elétrico… → NA
+---
 
-Q011 – Tamponamentos de drenos, ralos, vents… → NA (ajustado por contexto)
+### 8.4. Luvas
 
-Q012 – Risco de Perda de Produção? → Não
+Plano esperado:
 
-Q013 – Inibir sensores de fogo e gás… → NA (ajustado por contexto CO2+chama)
+* LUVA ANTI-VIBRAÇÃO
+* LUVA DE PROTEÇÃO CONTRA IMPACTOS MODELO II (3, 4, 3, 3, 'C', 'P')
 
-Q014 – Observador instruído para uso de combate a incêndio? → NA (ajustado por contexto)
+No cenário:
 
-4.2. Regras de contexto para QPT
-4.2.1. Q005 – inspeções em equipamentos elétricos
+* Inicialmente, havia uma lista “poluída” com várias luvas (PVC, isolante, rede elétrica, etc.).
+* O plano:
 
-Se houver:
+  * Garantiu que as duas luvas de vibração/impacto estivessem presentes.
+  * Removeu tudo que era excedente:
 
-“CHAMA ABERTA” ou
+    * luva isolante, luva PVC, luva nitrílica, conjunto de luvas para rede elétrica, “NÃO APLICÁVEL”, etc.
 
-qualquer “ELETRIC…” (cobre elétrico/eléctrico/eléctrica)
+Ligação com flags:
 
-então:
+* `tem_agulheiro` / `tem_pneumatico`:
 
-Q005 esperado = Sim
-Caso contrário → NA
+  * Justifica luva anti-vibração e luva de impacto.
 
-4.2.2. Q007 – mangueiras de ar comprimido
+---
 
-Se houver qualquer de:
+### 8.5. Proteção Respiratória
 
-“PNEUMATIC…”
+Plano esperado:
 
-“TRATAMENTO MECANICO”
+* PEÇA SEMI-FACIAL FILTRANTE 2
 
-“AGULHEIRO”
+No cenário:
 
-“LIXADEIRA PNEUMATIC…”
+* Inicialmente havia:
 
-então:
+  * Máscaras C1 para gases ácidos, metilamina, vapor orgânico.
+  * * peça semi-facial filtrante 2.
+* O plano:
 
-Q007 esperado = Sim
-Caso contrário → NA
+  * Mantém somente o que é aderente ao trabalho de agulheiro/limpeza/inspeção em altura.
+  * Remove as máscaras específicas que não são necessárias naquele contexto.
 
-4.2.3. Q009 – contenção de fagulhas
+Ligação com flags:
 
-Se houver “CHAMA ABERTA / ESMERILHADEIRA / OXICORTE / SOLDA”:
+* Até aqui, o cenário mostra que o plano assume **proteção respiratória básica filtrante** (pó, partículas) como suficiente, sem citar produtos químicos específicos na descrição.
 
-Q009 esperado = Sim
-Caso contrário → NA
+---
 
-4.2.4. Q011 – tamponamentos
+## 9. Aplicação do plano na interface (sem código, só comportamento)
 
-Se houver “CHAMA ABERTA / ESMERILHADEIRA / OXICORTE / SOLDA”:
+### 9.1. Questionário PT
 
-Q011 esperado = Sim
-Caso contrário → NA
+* Navega para aba “Questionário PT”.
+* Lê todas as linhas que contenham um número de ordem e um texto de pergunta.
+* Para cada linha:
 
-4.2.5. Q013 – sensores de fogo e gás (CO2 + chama)
+  * Identifica a pergunta pelo texto.
+  * Procura no `plano["qpt"]` a resposta correspondente (Sim/Não/NA).
+  * Seleciona o rádio correto na linha (quando a pergunta existe no plano).
+* Ignora:
 
-Se houver CO2 + chama, i.e.:
+  * Perguntas não reconhecidas.
+  * Linhas vazias ou decorativas.
 
-“AMBIENTES PROTEGIDOS POR CO2” e
+---
 
-qualquer de “CHAMA ABERTA / ESMERILHADEIRA / OXICORTE / SOLDA”
+### 9.2. EPI adicional
 
-então:
+* Na aba EPI, dentro de “EPI adicional necessário e proteções”:
 
-Q013 esperado = Sim
-Caso contrário → NA
+  * Lê todas as questões (Q001–Q00X).
+  * Identifica cada uma pelo texto (“Cinto de Segurança”, etc.).
+  * Aplica o `plano["epi_radios"]`, ligando Sim/Não conforme definido.
 
-4.2.6. Q014 – observador instruído
+---
 
-Se houver “CHAMA ABERTA / ESMERILHADEIRA / OXICORTE / SOLDA”:
+### 9.3. Análise Ambiental
 
-Q014 esperado = Sim
-Caso contrário → NA
+* Vai à aba “Análise Ambiental”.
+* Varre as linhas:
 
-5. Critério de divergência – EPI rádios, EPIs categoria, QPT
+  * Ignora linhas sem pergunta (agrupadores).
+  * Para cada pergunta de fato, marca **“Não”**.
+* É uma aplicação direta da regra fixa.
 
-No relatório relatorioaplat_trabalho_quente_divergencias.html:
+---
 
-Só entra etapa em que exista pelo menos uma divergência em:
+### 9.4. APN-1
 
-EPI (rádios principais), ou
+* Aba “APN-1”.
+* Mesma estratégia:
 
-EPIs por categoria, ou
+  * Ignora linhas de placeholder/vazias.
+  * Para cada pergunta com texto, identifica o código (Q001, Q002, etc.).
+  * Usa o `plano["apn1"]` para marcar cada questão com “Sim” ou “Não”.
+* No exemplo:
 
-Questionário PT.
+  * Q007 e Q008 → Sim.
+  * Todas as demais → Não.
 
-5.1. Tipos de divergência
+---
 
-EPI rádios / QPT
+### 9.5. Aba EPI – EPIs vinculados por categoria
 
-extra: pergunta existe na etapa, mas não existe na base daquele contexto.
+Para cada categoria em ordem: **Vestimentas**, **Óculos**, **Luvas**, **Proteção Respiratória**:
 
-Ex.: pergunta diferente, ou Q com texto diferente → amarelo.
+1. Localiza o bloco da categoria (pelo rótulo).
+2. Lê todos os itens atualmente vinculados.
+3. Calcula faltantes e excedentes versus `plano["epis_cat"][categoria]`.
 
-missing: pergunta existe na base, mas não apareceu na etapa.
+**Inclusão de faltantes:**
 
-diff: pergunta existe nos dois, mas:
+* Se existirem faltantes:
 
-resposta da etapa ≠ resposta esperada na base.
+  * Clica no botão “+” da categoria.
+  * Abre modal de associação de EPI.
+  * Dentro da tabela do modal, procura cada EPI pelo texto.
+  * Marca a checkbox correspondente.
+  * Confirma.
+  * Trata popup de erro se o sistema exigir “código de EPI não pode ser vazio”.
+  * Aguarda o fechamento do modal.
 
-EPIs por categoria
+**Remoção de excedentes:**
 
-Para cada categoria:
+* Se existirem excedentes:
 
-missing (vermelho): item esperado na base, não presente na etapa.
+  * Para cada EPI excedente:
 
-extra (amarelo): item presente na etapa, mas não está na base daquele contexto.
+    * Localiza o EPI na tabela da categoria.
+    * Clica na linha.
+    * Pressiona o botão “-” da categoria.
+    * Aguarda a atualização (linha some / tabela recarrega).
+* Se o item não for encontrado:
 
-5.2. Cores no HTML
+  * Loga um aviso e segue para o próximo (não aborta).
 
-Divergência em texto de EPI rádios / QPT:
+---
 
-<span class='diff-yellow'>...</span> → amarelo
+## 10. Confirmação final e idempotência
 
-Divergência em EPIs por categoria:
+### 10.1. Confirmação geral
 
-missing → texto em vermelho (diff-red)
+Ao final de todos os preenchimentos:
 
-extra → texto em amarelo (diff-yellow)
+* Volta ao rodapé da etapa.
+* Clica em “Confirmar” (rodapé).
+* Esta confirmação grava:
 
-6. APN-1 – Base e regras (Trabalho a Quente)
+  * QPT.
+  * EPI adicional.
+  * Análise Ambiental.
+  * APN-1.
+  * EPIs vinculados.
 
-APN-1 está em outro relatório, mas com a mesma lógica geral de contexto.
+Não há “salvar parcial” intermediário – o conceito é:
 
-6.1. Base global de APN-1
+> Monta plano → aplica → um único Confirmar.
 
-Para todas as 20 questões (Q001…Q020) a base é:
+---
 
-resp = 'Não'
+### 10.2. Idempotência prática
 
-Ou seja, tudo é “Não” por padrão, e as regras abaixo sobem para “Sim” quando o risco está presente.
+Se você rodar o script **novamente** na mesma etapa, com o mesmo contexto:
 
-6.2. Regras de contexto para APN-1
+* As respostas do QPT, EPI adicional, AA e APN-1 já vão bater com o plano.
+* Na aba EPI:
 
-As palavras-chave são buscadas em Descrição + Características (normalizadas).
+  * Itens faltantes serão zero.
+  * Itens excedentes serão zero (ou apenas alguns residuais que não puderam ser removidos por inconsistência de texto).
+* Resultado: a segunda execução é quase só leitura + verificação, com mínima modificação.
 
-6.2.1. Altura / Acesso por Cordas
+Isso é importante para:
 
-Se contiver:
+* Auditar o comportamento.
+* Rodar o script em rotina sem medo de “estragar” uma etapa já bem configurada.
 
-“ALTURA” ou
+---
 
-“ACESSO POR CORDAS”
+## 11. Esquema mental resumido (em forma de mapa lógico)
 
-então:
+Se alguém te perguntar em 30 segundos “como a lógica do APLATQUENTE decide tudo?”, o resumo é:
 
-Q007 esperado = Sim
-“Este trabalho será executado em altura acima de 2m…?”
+1. **Filtro de escopo**
+   Só mexe em etapas cujo Tipo Trabalho = “Trabalho a Quente”.
 
-6.2.2. Sobre o mar
+2. **Leitura da realidade**
+   Lê descrição + características e identifica contextos (cordas, altura, sobre o mar, agulheiro, pneumático, elétrico…).
 
-Se contiver:
+3. **Tradução em plano de segurança**
+   A partir desses contextos, define:
 
-“SOBRE O MAR”
+   * Respostas de Questionário PT (mudança? isolamentos? inspeções?).
+   * Necessidade de EPI adicional (cinto, colete, dupla proteção, protetor facial).
+   * APN-1 (quais riscos “elevados” justificam S/N).
+   * EPIs vinculados por categoria (quais EPIs têm que estar lá e quais devem sair).
+   * Análise Ambiental (neste modelo, tudo “Não” para Trabalho a Quente).
 
-então:
+4. **Execução na tela**
+   Vai em cada aba, aplica o plano, e dá um único Confirmar ao final.
 
-Q007 esperado = Sim
-
-Q008 esperado = Sim
-“Este trabalho será executado sobre o mar?”
-
-6.2.3. Chama aberta
-
-Se contiver:
-
-“CHAMA ABERTA”
-
-então:
-
-Q010 esperado = Sim
-“O trabalho envolverá chama aberta (solda, corte, esmerilhamento)?”
-
-(Você está usando isso como confirmação de que a equipe marcou corretamente o risco, coerente com EPI/QPT.)
-
-6.2.4. Ambientes protegidos por CO2 / sistema de CO2
-
-Se contiver qualquer de:
-
-“PROTEGIDO POR SISTEMA DE CO2”
-
-“PROTEGIDOS POR CO2”
-
-“PROTEGIDO POR CO2”
-
-(e tipicamente o seu log já traz “AMBIENTES PROTEGIDOS POR CO2” em Características)
-
-então:
-
-Q019 esperado = Sim
-“O trabalho envolve manutenção em sistema de combate a incêndio por CO2 ou será realizado no interior de ambientes protegidos por CO2?”
-
-6.2.5. Espaço confinado
-
-Se contiver:
-
-“ESPAÇO CONFINADO”
-
-então:
-
-Q006 esperado = Sim
-“Este trabalho será executado no interior de espaços confinados?”
-
-6.2.6. Equipamento pressurizado
-
-Se contiver:
-
-“PRESSURIZADO”
-
-então:
-
-Q013 esperado = Sim
-“O trabalho envolverá a abertura de equipamento ou linha, ou será realizado em equipamentos e sistemas pressurizados…?”
-
-6.2.7. Partes móveis
-
-Se contiver:
-
-“PARTES MOVEIS” (sem acento mesmo, após normalização)
-
-então:
-
-Q015 esperado = Sim
-“Durante a execução do trabalho pode haver aproximação do executante com partes móveis de máquinas ou equipamentos…?”
-
-6.2.8. Hidrojato / Hidrojateamento
-
-Se contiver:
-
-“HIDROJATO” ou
-
-“HIDROJATEAMENTO”
-
-então:
-
-Q018 esperado = Sim
-“O trabalho é de hidrojateamento?”
-
-6.3. Critério de divergência – APN-1
-
-No relatório APN-1 (Trabalho a Quente):
-
-Monta-se uma base dinâmica base_apn para cada etapa (com as regras acima).
-
-Lê-se as respostas de APN-1 (Q001…Q020).
-
-Para cada questão:
-
-Só é incluída no HTML se houver divergência, segundo:
-
-Sim indevido
-
-Resposta da etapa = Sim
-
-Base esperada ≠ Sim (ou seja, base é Não ou NA)
-→ Linha exibida como:
-Qxxx: resp='Sim' (ESPERADO: 'Não') | ...
-
-Sim faltando
-
-Base esperada = Sim
-
-Resposta da etapa ≠ Sim (Não ou NA)
-→ Linha exibida como:
-Qxxx: resp='Não' (ESPERADO: 'Sim') | ...
-
-Se uma etapa não tiver nenhuma divergência em APN-1, ela não aparece no relatório APN-1.
-
-No HTML:
-
-Título por etapa (número, data, tipo de trabalho).
-
-Mostra:
-
-Descrição
-
-Características
-
-Bloco “APN-1 – divergências em relação à base” com apenas as questões que estão fora do padrão.
-
-7. Resumo operacional
-
-Para Trabalho a Quente você passa a ter:
-
-Relatório de divergências principais
-relatorioaplat_trabalho_quente_divergencias.html
-→ EPIs (rádio), EPIs por categoria, Questionário PT
-
-Somente etapas onde alguma coisa difere do padrão (base + regras de contexto).
-
-Itens faltando = vermelho; itens a mais ou respostas diferentes = amarelo.
-
-Relatório de divergências APN-1
-(ex.: tquenteapn1.py gerando seu HTML)
-
-Somente questões de APN-1 que não batem com o que o contexto da tarefa indica.
-
-Você lê Descrição/Características + APN-1 e enxerga rápido:
-
-riscos que deveriam estar marcados e não estão, ou
-
-riscos que foram marcados sem aparecer no texto.
-
-Com isso, o “padrão Trabalho a Quente” está fechado em quatro camadas:
-
-Texto da tarefa (Descrição + Características)
-
-EPIs (rádios + categorias)
-
-Questionário PT
-
-APN-1
-
-todas dirigidas por um conjunto único de regras de contexto que você vem refinando.
+5. **Idempotente**
+   Se rodar de novo, o sistema praticamente só verifica e faz pequenos ajustes, porque o plano alvo já está todo refletido na etapa.
