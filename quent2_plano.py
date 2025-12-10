@@ -163,12 +163,38 @@ def montar_contexto_from_textos(
     ctx: Dict[str, Any] = {}
     ctx["texto_full"] = texto
 
+    # **CORREÇÃO: Melhorar detecção de ESPAÇO CONFINADO**
+    ctx["tem_espaco_confinado"] = any(
+        frase in texto
+        for frase in (
+            "ESPACO CONFINADO",
+            "INTERIOR DE ESPACO",
+            "ESPACO CONFINADO -",
+            "DENTRO DE",
+            "INTERIOR DO",
+        )
+    ) or "ESPACO CONFINADO" in texto
+
+    # **CORREÇÃO: Melhorar detecção de ALTURA**
+    ctx["tem_altura"] = any(
+        frase in texto
+        for frase in (
+            "ALTURA",
+            "ACESSO POR CORDAS",
+            "CORDAS",
+            "NR-35",
+            "TRABALHO EM ALTURA",
+        )
+    ) or "ALTURA" in texto
+
+    # Restante das flags mantidas
+    ctx["tem_acesso_cordas"] = "ACESSO POR CORDAS" in texto
+    ctx["tem_sobre_o_mar"] = "SOBRE O MAR" in texto
     ctx["tem_chama"] = any(
         ch in texto for ch in ("CHAMA ABERTA", "ESMERILHADEIRA", "OXICORTE", "SOLDA")
     )
     ctx["tem_oxicorte"] = "OXICORTE" in texto
     ctx["tem_solda"] = bool(re.search(r"\bSOLDA\b", texto))
-
     ctx["tem_co2"] = any(
         frase in texto
         for frase in (
@@ -178,26 +204,17 @@ def montar_contexto_from_textos(
             "PROTEGIDO POR CO2",
         )
     )
-
-    ctx["tem_acesso_cordas"] = "ACESSO POR CORDAS" in texto
-    ctx["tem_sobre_o_mar"] = "SOBRE O MAR" in texto
-
     ctx["tem_trat_mec"] = "TRATAMENTO MECANICO" in texto
     ctx["tem_agulheiro"] = "AGULHEIRO" in texto
     ctx["tem_lix_pneum"] = "LIXADEIRA PNEUMATIC" in texto
     ctx["tem_lixadeira"] = "LIXADEIRA" in texto
-
     ctx["tem_pneumatico"] = "PNEUMATIC" in texto
     ctx["tem_eletrico"] = "ELETRIC" in texto
-
     ctx["tem_corte"] = bool(re.search(r"\bCORTE\b", texto))
     ctx["tem_serra_sabre"] = "SERRA SABRE" in texto
-
-    ctx["tem_altura"] = "ALTURA" in texto or ctx["tem_acesso_cordas"]
-    ctx["tem_espaco_confinado"] = "ESPACO CONFINADO" in texto
     ctx["tem_pressurizado"] = "PRESSURIZADO" in texto
-    ctx["tem_partes_moveis"] = "PARTES MOVEIS" in texto
     ctx["tem_hidrojato"] = ("HIDROJATO" in texto) or ("HIDROJATEAMENTO" in texto)
+    ctx["tem_partes_moveis"] = "PARTES MOVEIS" in texto
 
     return ctx
 
@@ -481,45 +498,39 @@ def montar_base_qpt(ctx: Dict[str, Any]) -> Dict[Tuple[str, str], str]:
 
 def montar_base_apn1(ctx: Dict[str, Any]) -> Dict[str, str]:
     """
-    Base APN-1:
-
-    - Até 20 questões (Q001 ... Q020).
-    - Mesmo conjunto de perguntas; alguns itens podem não existir em certas unidades.
-    - Numeração na tela pode mudar, mas o texto das perguntas é fixo.
+    Base APN-1 corrigida para considerar ESPAÇO CONFINADO e ALTURA.
     """
     base = {f"Q{num:03d}": "Não" for num in range(1, 21)}
 
-    # Mapeamento alinhado com o texto da APN-1:
-    #  Q006 – Espaço confinado
-    #  Q007 – Trabalho em altura
-    #  Q008 – Trabalho sobre o mar
-    #  Q010 – Chama aberta
-    #  Q013 – Abertura / sistema pressurizado
-    #  Q016 – Hidrojateamento
-    #  Q017 – Partes móveis expostas
-    #  Q019 – Ambientes protegidos por CO2 (quando existir no formulário)
-
-    if ctx.get("tem_altura") or ctx.get("tem_acesso_cordas") or ctx.get("tem_sobre_o_mar"):
-        base["Q007"] = "Sim"
-
-    if ctx.get("tem_sobre_o_mar"):
-        base["Q008"] = "Sim"
-
-    if ctx.get("tem_chama"):
-        base["Q010"] = "Sim"
-
-    if ctx.get("tem_co2"):
-        base["Q019"] = "Sim"
-
+    # **CORREÇÃO: Espaço confinado → Q006**
     if ctx.get("tem_espaco_confinado"):
         base["Q006"] = "Sim"
 
+    # **CORREÇÃO: Altura ou acesso por cordas → Q007**
+    if ctx.get("tem_altura") or ctx.get("tem_acesso_cordas"):
+        base["Q007"] = "Sim"
+
+    # Sobre o mar → Q008
+    if ctx.get("tem_sobre_o_mar"):
+        base["Q008"] = "Sim"
+
+    # Chama aberta → Q010
+    if ctx.get("tem_chama"):
+        base["Q010"] = "Sim"
+
+    # CO2 → Q019
+    if ctx.get("tem_co2"):
+        base["Q019"] = "Sim"
+
+    # Pressurizado → Q013
     if ctx.get("tem_pressurizado"):
         base["Q013"] = "Sim"
 
+    # Hidrojato → Q016
     if ctx.get("tem_hidrojato"):
         base["Q016"] = "Sim"
 
+    # Partes móveis → Q017
     if ctx.get("tem_partes_moveis"):
         base["Q017"] = "Sim"
 

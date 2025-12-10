@@ -336,27 +336,41 @@ class EPIProcessor:
             self._selecionar_item_modal(categoria, item)
 
     def _selecionar_item_modal(self, categoria: str, item: str):
-        """Seleciona um item específico no modal."""
-        item_norm = normalizar_texto_epi(item)
-        xpath_literal = criar_xpath_literal(item_norm)
-        xpath_linha = f"//app-epi-da-etapa//app-associar-epi//table//tr[.//td[normalize-space()={xpath_literal}]]"
+        """Seleciona um item específico no modal com busca flexível."""
+        # **CORREÇÃO: Buscar por partes do texto para EPI Obrigatório**
+        item_lower = item.lower()
 
-        # Tenta localizar linha do item
-        linha = self._buscar_elemento_com_retry(xpath_linha, max_tentativas=3)
-        if not linha:
-            print(f"[WARN] Item não encontrado no modal: '{item}'")
-            return
+        # Tentar diferentes estratégias de busca
+        estrategias_busca = [
+            # Busca exata
+            lambda: f"//tr[.//td[normalize-space()='{item}']]",
+            # Busca por contém
+            lambda: f"//tr[.//td[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{item_lower}')]]",
+            # Busca por parte do texto (para EPI Obrigatório)
+            lambda: f"//tr[.//td[contains(., 'EPI') and contains(., 'OBRIGATÓRIOS')]]",
+            lambda: f"//tr[.//td[contains(., 'EPI') and contains(., 'OBRIGATORIOS')]]",
+        ]
 
-        # Marca checkbox
-        try:
-            checkbox = linha.find_element(By.XPATH, ".//td[1]//input[@type='checkbox']")
-            if not checkbox.is_selected():
-                checkbox.click()
-                print(f"[EPI] Item marcado: '{item}'")
-        except StaleElementReferenceException:
-            print(f"[WARN] Elemento STALE ao marcar '{item}'")
-        except Exception as e:
-            print(f"[ERROR] Erro ao marcar item '{item}': {e}")
+        for estrategia in estrategias_busca:
+            try:
+                xpath = estrategia()
+                linha = self.driver.find_element(By.XPATH, xpath)
+                if linha:
+                    # Marca checkbox
+                    checkbox = linha.find_element(By.XPATH, ".//td[1]//input[@type='checkbox']")
+                    if not checkbox.is_selected():
+                        checkbox.click()
+                        print(f"[EPI] Item marcado: '{item}' (encontrado com busca flexível)")
+                        return
+            except NoSuchElementException:
+                continue
+            except StaleElementReferenceException:
+                print(f"[WARN] Elemento STALE ao marcar '{item}'")
+                return
+            except Exception as e:
+                continue
+
+        print(f"[WARN] Item não encontrado no modal (mesmo com busca flexível): '{item}'")
 
     def _buscar_elemento_com_retry(self, xpath: str, max_tentativas: int = 3) -> Optional[Any]:
         """Busca elemento com retry em caso de falha."""

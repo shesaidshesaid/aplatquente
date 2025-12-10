@@ -316,14 +316,33 @@ def executar_plano_completo(driver, args, numero_etapa: str,
     imprimir_relatorio_plano(
         numero_etapa,
         args.data,
-        coletar_tipo_trabalho(driver, args.timeout)[1],  # Apenas texto
+        coletar_tipo_trabalho(driver, args.timeout)[1],
         descricao,
         caracteristicas,
         plano,
     )
 
-    # Preencher todos os questionários
-    preencher_questionarios(driver, args, plano, descricao, caracteristicas)
+    # **CORREÇÃO: Ordem otimizada com tratamento de modais**
+    from quent1_infra import ensure_no_messagebox
+
+    formularios = [
+        ("Questionário PT", lambda: preencher_questionario_pt(driver, args.timeout, plano["qpt"])),
+        # Fechar modais antes de EPI adicional
+        ("Fechar modais", lambda: ensure_no_messagebox(driver, args.timeout)),
+        ("EPI adicional", lambda: preencher_epi_adicional(driver, args.timeout, plano["epi_radios"])),
+        ("Análise Ambiental", lambda: preencher_analise_ambiental(driver, args.timeout)),
+        ("APN-1", lambda: preencher_apn1(driver, args.timeout, descricao, caracteristicas)),
+        ("EPI", lambda: processar_aba_epi(driver, args.timeout, plano["epis_cat"])),
+    ]
+
+    for nome_form, executar in formularios:
+        try:
+            print(f"\n[STEP] Processando {nome_form}...")
+            executar()
+            # Pequena pausa entre formulários
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"[ERROR] Erro no preenchimento de {nome_form}: {e}")
 
 
 def preencher_questionarios(driver, args, plano: dict,
