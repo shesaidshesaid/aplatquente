@@ -8,19 +8,19 @@ git status
 2) Salvar uma versão funcional (commit):
 
 git add .
-git commit -m "DEFINITIVO5"
+git commit -m "commmittt"
 
 
 3) Criar a TAG (save point):
 
-git tag -a v2026-01-06-0400html-ok -m "DEFINITIVO5"
+git tag -a v2026-01-08-0600html-ok -m "commmit"
 
 
 
 4) Enviar para o GitHub:
 
 git push origin main
-git push origin v2026-01-06-0400html-ok
+git push origin v2026-01-08-0600html-ok
 
 Conferir qual tag está “em cima” do código atual:
 

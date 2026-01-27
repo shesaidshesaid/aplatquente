@@ -1,1 +1,1 @@
-python -m aplatquente.aplatquente --valor 52/1980/2022 --data 2026-01-03 --use-keyring --user d9j8
+python -m aplatquente.aplatquente --valor 52/1980/2022 --data 2026-01-10 --use-keyring --user d9j8
